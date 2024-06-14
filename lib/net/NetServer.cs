@@ -22,8 +22,13 @@ namespace lib.net
         protected Dictionary<string, DateTime> heartBeat = new Dictionary<string, DateTime>();
         protected Timer timer;
 
-        public NetServer(int port, string MasterIpAddress = "",int masterPort = -1):this(port,MasterIpAddress != ""&&masterPort != -1 ? new TcpClient(MasterIpAddress,masterPort):null)
-        {}
+        public string IP { get; private set; }
+        public int Port { get { return port; } }
+
+        public NetServer(int port) : this(port, null)
+        { }
+        public NetServer(int port, string MasterIpAddress = "", int masterPort = -1) : this(port, MasterIpAddress != "" && masterPort != -1 ? new TcpClient(MasterIpAddress, masterPort) : null)
+        { }
         public NetServer(int port, TcpClient MasterServer = null)
         {
             if (Instance == null)
@@ -32,6 +37,8 @@ namespace lib.net
             }
 
             IPAddress address = IpUtils.GetLocalAddress();
+
+            IP = address.ToString();
             
             server = new TcpListener(address,port);
             this.port = port;
@@ -82,6 +89,7 @@ namespace lib.net
                 PathedPacket pack = (PathedPacket)pp;
                 string[] id = pack.RoutingPath();
                 PathRouting.InvokePath(cli, pp, id);
+
             }, path);
             path = EPathedPacketType.Uns.ToString();
             path = EPathedPacketType.Req.ToString();

@@ -6,7 +6,15 @@ namespace Server
     {
         static void Main(string[] args)
         {
-            NetServer server = new NetServer(8080);
+            string MasterIpAddress = "";
+            int MasterPort = -1;
+            if(args.Length == 2)
+            {
+                MasterIpAddress = args[0];
+                MasterPort = int.Parse(args[1]);
+            }
+
+            NetServer server = new NetServer(8080,MasterIpAddress,MasterPort);
             server.Start();
 
             string input = "";
