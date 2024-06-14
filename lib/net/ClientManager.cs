@@ -6,6 +6,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Net.Sockets;
+using System.Net;
+using System.Net.NetworkInformation;
 
 namespace lib.net
 {
@@ -13,12 +16,15 @@ namespace lib.net
     {
         static List<NetClient> clients = new List<NetClient>();
         static Thread Reader = null;
+        static Thread Writer = null;
         static Thread Stats = null;
         static CancellationTokenSource CancellationToken ;
         static int recieved = 0;
         static int Rmessages = 0;
         static int sent = 0;
         static int Smessages = 0;
+        static int buffersSent = 0;
+        static int packetsTook = 0;
 
         public static event Action<NetClient> OnClientConnect;
         public static event Action<NetClient> OnClientDisconnect;
@@ -31,43 +37,107 @@ namespace lib.net
             lock (clients)
             clients.Add(client);
             OnClientConnect?.Invoke(client);
-            if(Reader == null||!Reader.IsAlive)
+
+
+
+
+            if (Reader == null||!Reader.IsAlive)
             {
-                if(CancellationToken != null)
+                if (CancellationToken != null)
                 {
                     CancellationToken.Cancel();
                 }
                 CancellationToken = new CancellationTokenSource();
-                if (Reader == null)
-                {
-                    Stats = new Thread(ReadStats);
-                    Stats.Start();
-                }
-
                 Reader = new Thread(ReadClients);
                 Reader.Start();
-
-               
             }
+            if (Stats == null || !Stats.IsAlive)
+            {
+                Stats = new Thread(ReadStats);
+                Stats.Start();
+            }
+            //TODO: Fix this
+            if (Config.IsServer)
+            {
+                if (Writer == null || !Writer.IsAlive)
+                {
+                    Writer = new Thread(WriteClients);
+                    Writer.Start();
+                }
+            }
+        }
+
+        private static void WriteClients()
+        {
+            while (!CancellationToken.IsCancellationRequested)
+            {
+                List<NetClient> clients2;
+                lock (clients)
+                {
+                    clients2 = new List<NetClient>(clients);
+                }
+                Parallel.ForEach(clients2, client =>
+                {
+                    if (!client.Connected)
+                    {
+                        RemoveClient(client);
+                        return;
+                    }
+                    if (!client.HasSendData)
+                    {
+                        return;
+                    }
+                    client.SendData();
+                });
+                Thread.Sleep(1);
+            }
+            Console.WriteLine("Write Thread Aborted");
         }
 
         private static void ReadStats()
         {
-            while(!CancellationToken.IsCancellationRequested)
+            IPGlobalProperties properties = IPGlobalProperties.GetIPGlobalProperties();
+            Console.WriteLine("");
+           
+
+            while (!CancellationToken.IsCancellationRequested)
             {
-                Console.WriteLine($"Clients: {clients.Count}");
 
+                //TcpStatistics tcpstat = properties.GetTcpIPv4Statistics();
                 recieved = clients.Sum(client => client.ResetReceived());
-                Console.WriteLine($"Recieved: {recieved}");
-
                 Rmessages = clients.Sum(client => client.ResetRMessages());
-                Console.WriteLine($"Recieved Messages: {Rmessages}");
-
                 sent = clients.Sum(client => client.ResetSent());
-                Console.WriteLine($"Sent: {sent}");
-
                 Smessages = clients.Sum(client => client.ResetSMessages());
-                Console.WriteLine($"Sent Messages: {Smessages}");
+                Console.WriteLine($"      Clients:                              : {clients.Count}");
+                Console.WriteLine($"      Recieved:                             : {recieved}");
+                Console.WriteLine($"      Recieved Messages:                    : {Rmessages}");
+                Console.WriteLine($"      Sent Bytes:                           : {sent}");
+                Console.WriteLine($"      Sent Messages:                        : {Smessages}");
+                if(Config.IsServer)
+                {
+                    buffersSent = clients.Sum(client => client.ResetBuffersSent());
+                    Console.WriteLine($"      Buffers Sent:                         : {buffersSent}");
+                    packetsTook = clients.Sum(client => client.ResetPacketsTook());
+                    Console.WriteLine($"      Packets Took:                         : {packetsTook}");
+
+                }
+
+                //Console.WriteLine("  Minimum Transmission Timeout............. : {0}",tcpstat.MinimumTransmissionTimeout);
+                //Console.WriteLine("  Maximum Transmission Timeout............. : {0}",tcpstat.MaximumTransmissionTimeout);
+                //Console.WriteLine("  Connection Data:");
+                //Console.WriteLine("      Current  ............................ : {0}",tcpstat.CurrentConnections);
+                //Console.WriteLine("      Cumulative .......................... : {0}",tcpstat.CumulativeConnections);
+                //Console.WriteLine("      Initiated ........................... : {0}",tcpstat.ConnectionsInitiated);
+                //Console.WriteLine("      Accepted ............................ : {0}",tcpstat.ConnectionsAccepted);
+                //Console.WriteLine("      Failed Attempts ..................... : {0}",tcpstat.FailedConnectionAttempts);
+                //Console.WriteLine("      Reset ............................... : {0}",tcpstat.ResetConnections);
+                //Console.WriteLine("");
+                //Console.WriteLine("  Segment Data:");
+                //Console.WriteLine("      Received  ........................... : {0}",tcpstat.SegmentsReceived);
+
+                //Console.WriteLine("      Sent ................................ : {0}",tcpstat.SegmentsSent);
+
+                //Console.WriteLine("      Retransmitted ....................... : {0}",tcpstat.SegmentsResent);
 
                 recieved = 0;
                 Thread.Sleep(1000);

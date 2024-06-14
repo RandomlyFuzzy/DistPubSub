@@ -136,5 +136,23 @@ namespace lib.Utils
         {
             return SerializeUtils.DeserializeUint(ms.ReadBytes(4));
         }
+
+        public static byte[] ReadBytes(this BufferLooper ms, int count)
+        {
+            byte[] ret = bufferes.Rent(count);
+            ms.Read(ret, 0, count);
+            return ret;
+        }
+        public static byte[] ReadBytes(this BufferLooper ms, uint count) => ms.ReadBytes((int)count);
+
+        public static void WriteBytes(this BufferLooper ms, Span<byte> data)
+        {
+            ms.Write(data);
+        }
+
+        public static uint ReadUint(this BufferLooper ms)
+        {
+            return SerializeUtils.DeserializeUint(ms.ReadBytes(4));
+        }
     }
 }

@@ -2,6 +2,7 @@
 using lib.net;
 using lib.Routing;
 using lib.serializer;
+using lib.Utils;
 using System.Numerics;
 
 namespace Client
@@ -10,7 +11,19 @@ namespace Client
     {
         static void Main(string[] args)
         {
-            NetClient client = new NetClient("127.0.0.1", 8080);
+            string ip = IpUtils.GetLocalAddress(args.Length >= 1).ToString();
+            int port = 8080;
+            if (args.Length == 1)
+            {
+                ip = args[0];
+                Console.WriteLine("setting ip to " + ip);
+            }
+            if (args.Length == 2) {             
+                port = int.Parse(args[1]);
+                Console.WriteLine("Setting port to "+port);
+            }
+            Console.WriteLine("hello");
+            NetClient client = new NetClient(ip, port);
             //client.SubscribeToPath((ComplexTest i) => i.a=0, "mess");
 
             //var mess = GenerateMessage();

@@ -16,6 +16,7 @@ namespace lib.Routing
 
         public static int AddPath(Action<NetClient, object> action,params string[] path)
         {
+
             return Tree.AddToPath(path, action);
         }
         public static int InvokePath(NetClient cli, object Data, params string[] path)
@@ -34,8 +35,8 @@ namespace lib.Routing
             Action<NetClient, object>[] act = Tree.getPath(path);
             if (act != null)
             {
-                if (act.Length<5)
-                {
+                //if (act.Length<5)
+                //{
                     ////get cpu usage and decide to use parallel or not the next time
                     //double cpu = GetCpuUsage();
                     foreach (var item in act)
@@ -47,11 +48,11 @@ namespace lib.Routing
                     //{
                     //    useParallel[pat] = true;
                     //}
-                }
-                else
-                {
-                    Parallel.ForEach(act, (a) => a.Invoke(cli,Data));
-                }
+                //}
+                //else
+                //{
+                //    Parallel.ForEach(act, (a) => a.Invoke(cli,Data));
+                //}
                 return act.Length;
             }
             return 0;
@@ -66,16 +67,6 @@ namespace lib.Routing
             Tree.ClearAtPath(path, id);
         }
 
-        public static void AddHeartbeatPath(this NetClient client)
-        {
-            string Path = "Heartbeat";
-            Path += client.ID;
-            PathRouting.AddPath((NetClient cli,object data) =>
-            {
-                Console.WriteLine("heartbeat from "+client.ID);
-                NetServer.Instance.HeartBeat(client.ID);
-            }, Path);
-        }
 
 
 

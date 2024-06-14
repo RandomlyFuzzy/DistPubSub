@@ -22,18 +22,27 @@ namespace lib.net
         protected Dictionary<string, DateTime> heartBeat = new Dictionary<string, DateTime>();
         protected Timer timer;
 
-        public NetServer(int port)
+        public NetServer(int port, string MasterIpAddress = "",int masterPort = -1):this(port,MasterIpAddress != ""&&masterPort != -1 ? new TcpClient(MasterIpAddress,masterPort):null)
+        {}
+        public NetServer(int port, TcpClient MasterServer = null)
         {
             if (Instance == null)
             {
                 Instance = this;
             }
-            server = new TcpListener(port);
+
+            IPAddress address = IpUtils.GetLocalAddress();
+            
+            server = new TcpListener(address,port);
             this.port = port;
             Config.IsServer = true;
-            if (Config.IsServer)
+            BindPathedPacketType();
+            Console.WriteLine(address.ToString()) ;
+            if(MasterServer != null)
             {
-                BindPathedPacketType();
+                NetClient client = new NetClient(MasterServer);
+                PathedPacket packet = new PathedPacket(EPathedPacketType.Bro, new byte[0], "");
+                client.SendPacket(packet);
             }
             //timer = new Timer(SendHeartbeat, null, 0, 1000);
         }
@@ -196,7 +205,6 @@ namespace lib.net
             NetClient netClient = new NetClient(client);
             Console.WriteLine($"Accepted Client {netClient.ip}:{netClient.port}");
             Instance.HeartBeat(netClient.ID);
-            netClient.AddHeartbeatPath();
             clients.Add(netClient);
             server.BeginAcceptTcpClient(AcceptClient, null);
         }

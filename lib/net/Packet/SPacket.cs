@@ -60,7 +60,29 @@ namespace lib.net.Packet
             }
             Value = body[(int)keyLen..(int)(keyLen+valueLen)].ToArray();
         }
+        public SPacket(BufferLooper stream)
+        {
+            byte[] Header = stream.ReadBytes(HeaderLength);
 
+            int pos = 0;
+            //read length
+            int length = (int)SerializeUtils.DeserializeUint(Header[..4]);
+            pos += 4;
+            PacketType = (EPacketType)Header[pos];
+            pos += 1;
+            uint keyLen = Header[pos..].DeserializeUint();
+            pos += 4;
+            uint valueLen = Header[pos..].DeserializeUint();
+            pos += 4;
+            string tail = string.Join("", Header[pos..20].Select(a => (char)a));
+            if (tail != "|||||||")
+            {
+                throw new Exception("Invalid packet header");
+            }
+            //stream.Position -= (Header.Length - 20);
+            Key = stream.ReadBytes((int)keyLen).DeserializeString();
+            Value = stream.ReadBytes((int)valueLen).ToArray()[..(int)valueLen];
+        }
         public SPacket(MemoryStream stream)
         {
             byte[] Header = stream.ReadBytes(HeaderLength);
