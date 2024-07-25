@@ -12,6 +12,5 @@ namespace lib.net.Packet
         PubSub = 0b00000001,
         Cache = 0b00000010,
 
-
     }
 }
