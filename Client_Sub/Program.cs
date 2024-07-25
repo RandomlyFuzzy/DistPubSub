@@ -20,15 +20,43 @@ namespace Client_Sub
                 port = int.Parse(args[1]);
             }
             NetClient client = new NetClient(ip, port);
-            client.SubscribeToPath((long i) => {
+            TimeSpan ts = DateTime.Now.Subtract(new DateTime(0));
+/*            new Thread(() =>
+            {
+                while (true)
+                {
+                    TimeSpan ts2 = DateTime.Now.Subtract(new DateTime(0));
 
-                //if(i % 10000 != 0)
-                //{
-                //    return;
-                //}
-                //Console.WriteLine(i);
-                i = 0;
+                    string str = "";
+
+                    TimeSpan timeSpan = ts;
+                    DateTime dt = new DateTime(0).Add(timeSpan);
+                    str += ("Recieved time: " + dt.ToLongTimeString() + ":" + timeSpan.Milliseconds + ":" + timeSpan.Microseconds);
+
+                    timeSpan = ts2;
+                    dt = new DateTime(0).Add(timeSpan);
+                    str+=("\t\tCurrent Time: "+ dt.ToLongTimeString() + ":"+timeSpan.Milliseconds+":"+timeSpan.Microseconds);
+
+                    timeSpan = ts2.Subtract(ts) ;
+                    dt = new DateTime(0).Add(timeSpan);
+                    str += ("\t\tdiff Time: " + dt.ToLongTimeString() + ":" + timeSpan.Milliseconds + ":" + timeSpan.Microseconds);
+
+                    Console.WriteLine(str);
+
+                    Thread.Sleep(1000);
+                }
+
+            }).Start();*/
+            client.SubscribeToPath((double i) => {
+
+                ts = new TimeSpan((long)i * 10);
+                //Console.WriteLine("Ticks: " + diff.ToString("N0")+" "+ticks.ToString("N0"));
+
+                //Console.WriteLine("Diff: " + diff);
+
             }, "mess");
+
+            
 
             Console.Read();
 

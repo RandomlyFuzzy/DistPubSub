@@ -186,16 +186,22 @@ namespace lib.net
                                 break;
                             case EPacketType.Path:
                                 PathedPacket pathedPacket = new PathedPacket(item);
-                                //Console.WriteLine(pathedPacket.Key+"\n");
-                                //int activePath = client.InvokePath(pathedPacket, pathedPacket.RoutingPath());
-                                //if (activePath == 0)
                                 client.InvokePath(pathedPacket, pathedPacket.RoutingType().ToString());
                                 break;
                             case EPacketType.Type:
                                 Type t = TypedPacket<object>.GetPathedType(item.Serialize());
                                 client.InvokePath((new TypedPacket<object>(item)).GetObject(t), t.GetFullType());
                                 break;
+                            case EPacketType.Sync:
+                                SyncPacket syncPacket = new SyncPacket(item);
+                                SyncPacketRouter.Route(syncPacket, client);
+                                break;
+                            case EPacketType.Reserviced1:
+                            case EPacketType.Reserviced2:
+                            case EPacketType.Reserviced3:
+                            case EPacketType.Error:
                             default:
+                                Console.WriteLine("invalid packet type "+item.PacketType);
                                 break;
                         }
                     }

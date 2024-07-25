@@ -37,6 +37,11 @@ namespace lib.serializer
             //get the length of the string and serialize it as a uint first
             //then serialize the string as bytes
 
+            if(str.Length == 0)
+            {
+                return new byte[0];
+            }
+
             Span<byte> ret = stackalloc byte[4 + str.Length];
             SerializeUint((uint)str.Length).CopyTo(ret);
             Encoding.ASCII.GetBytes(str).CopyTo(ret.Slice(4));
@@ -47,7 +52,10 @@ namespace lib.serializer
         {
             //deserialize the length of the string as a uint
             //then deserialize the string as bytes
-
+            if(data.Length == 0)
+            {
+                return "";
+            }
             uint length = DeserializeUint(data);
             return Encoding.ASCII.GetString(data.ToArray(), 4, (int)length);
         }

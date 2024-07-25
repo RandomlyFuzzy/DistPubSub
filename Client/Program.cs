@@ -11,7 +11,7 @@ namespace Client
     {
         static void Main(string[] args)
         {
-            string ip = IpUtils.GetLocalAddress(args.Length >= 1).ToString();
+            string ip = IpUtils.GetLocalAddress(args.Length > 0).ToString();
             int port = 8080;
             if (args.Length == 1)
             {
@@ -30,13 +30,15 @@ namespace Client
             //ComplexTest test = new ComplexTest();
             long id = 0;
             //KeyValueStore.Set("id", id);
+            TimeSpan ts;
             while (true)
             {
                 //id = KeyValueStore.Get<int>("id").GetAwaiter().GetResult();
                 //KeyValueStore.Set<int>("id", ++id);
                 //KeyValueStore.Set<int>("id"+id, id);
 
-                client.PublishToPath(id++, "mess");
+                ts = DateTime.Now.Subtract(new DateTime(0));
+                client.PublishToPath(ts.TotalMicroseconds, "mess");
                 //client.SendPacket(new lib.net.Packet.NamedPacket("mess", mess));
             }
         }

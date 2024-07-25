@@ -8,7 +8,6 @@ namespace DistPubSub
     {
         static void Main(string[] args)
         {
-
             uint check = SerializeUtils.DeserializeUint(SerializeUtils.SerializeUint(1234));
             Console.WriteLine(check);
             NamedPacket packet = new NamedPacket("test", Encoding.ASCII.GetBytes("Hello World!"));

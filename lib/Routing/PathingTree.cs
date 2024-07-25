@@ -25,6 +25,7 @@ namespace lib.Routing
 
         int AddToLeafs(Object leaf)
         {
+            lock (Leafs) 
             Leafs.Add(leaf);
             return Leafs.Count - 1;
         }

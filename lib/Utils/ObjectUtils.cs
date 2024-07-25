@@ -1,4 +1,5 @@
 ﻿using lib.net;
+using lib.net.Packet;
 using lib.serializer;
 using System;
 using System.Buffers;
@@ -153,6 +154,10 @@ namespace lib.Utils
         public static uint ReadUint(this BufferLooper ms)
         {
             return SerializeUtils.DeserializeUint(ms.ReadBytes(4));
+        }
+        public static string ToString(this EPathedPacketType type)
+        {
+            return ((int)type).ToString();
         }
     }
 }

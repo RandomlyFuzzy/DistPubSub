@@ -38,6 +38,7 @@ namespace lib.net
         public string ip { get; init; }
 
         public string ID => ip + ":" + port;
+        public string LocalID => ((System.Net.IPEndPoint)client.Client.LocalEndPoint).Address.ToString() + ":" + ((System.Net.IPEndPoint)client.Client.LocalEndPoint).Port;
 
         public int Available => client.Available;
         public bool Connected => client.Connected;
@@ -168,22 +169,15 @@ namespace lib.net
             Send(data);
         }
 
-        public Span<byte> Receive()
+        public (int?, byte[]) Receive()
         {
-            if (!Connected)
-                return new Span<byte>();
+            if (!Connected || Available == 0)
+                return (0,new byte[0]);
             
-            int len = Available;
-            Span<byte> data = stackalloc byte[len];
+            Span<byte> data = pool.Rent(Available);
             int? len2 = ns?.Read(data);
-            if (len2 == null)
-                return new Span<byte>();
-
-            if (len2 < len)
-            {
-                len = len2.Value;
-            }
-            return data.Slice(0, len).ToArray();
+            
+            return (len2,data.ToArray());
         }
 
         BufferLooper buffer;
@@ -194,13 +188,17 @@ namespace lib.net
                 yield break;
 
             var dat = Receive();
-            received += dat.Length;
-
-            if (dat.Length == 0)
+            if(dat.Item1 == null || dat.Item1 == 0)
+            {
+                pool.Return(dat.Item2);
                 yield break;
+            }
+            received += dat.Item1.Value;
+
 
             lock(buffer)
-            buffer.Write(dat,0, dat.Length);
+            buffer.Write(dat.Item2,0, dat.Item1.Value);
+            pool.Return(dat.Item2);
             buffer.Position = 0;
             uint PacketLen = buffer.ReadUint();
             while (buffer.WriteLength - buffer.Position > PacketLen&&PacketLen != 0)
@@ -358,11 +356,14 @@ namespace lib.net
 
 
         int size = 0;
+        internal bool isServerConnection;
+
         internal void SendData()
         {
             //fill up the TempWriteBuffer with packets from the sendQueue until it is nearly full crop it and send it
             while (ns != null && sendQueue.TryTake(out byte[] packet))
             {
+                Smessages++;
                 PacketsTook++;
                 if (size + packet.Length > TempWriteBuffer.Length)
                 {

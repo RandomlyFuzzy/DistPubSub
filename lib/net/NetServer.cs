@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 using lib.Routing;
 using lib.serializer;
 using lib.Utils;
+using System.Security.Cryptography.X509Certificates;
+using System.Security.Claims;
 
 namespace lib.net
 {
@@ -25,11 +27,13 @@ namespace lib.net
         public string IP { get; private set; }
         public int Port { get { return port; } }
 
+        public string ID { get => IP + ":" + Port; }
+
         public NetServer(int port) : this(port, null)
         { }
-        public NetServer(int port, string MasterIpAddress = "", int masterPort = -1) : this(port, MasterIpAddress != "" && masterPort != -1 ? new TcpClient(MasterIpAddress, masterPort) : null)
+        NetServer(int port, string MasterIpAddress = "", int masterPort = -1) : this(port, MasterIpAddress != "" && masterPort != -1 ? new TcpClient(MasterIpAddress, masterPort) : null)
         { }
-        public NetServer(int port, TcpClient MasterServer = null)
+        NetServer(int port, TcpClient MasterServer = null)
         {
             if (Instance == null)
             {
@@ -43,11 +47,13 @@ namespace lib.net
             server = new TcpListener(address,port);
             this.port = port;
             Config.IsServer = true;
+            Config.CoreServer = this;
             BindPathedPacketType();
             Console.WriteLine(address.ToString()) ;
             if(MasterServer != null)
             {
                 NetClient client = new NetClient(MasterServer);
+                client.isServerConnection = true;
                 PathedPacket packet = new PathedPacket(EPathedPacketType.Bro, new byte[0], "");
                 client.SendPacket(packet);
             }
@@ -64,7 +70,7 @@ namespace lib.net
         }
 
         private void BindPathedPacketType()
-        {
+        { 
             string path = "";
             path = EPathedPacketType.Sub.ToString();
             PathRouting.AddPath((NetClient cli, object pp) => {
@@ -155,6 +161,7 @@ namespace lib.net
             {
                 cli.ClientLog(" Disconnected");
                 cli.Close();
+                ClientManager.RemoveClient(cli);
                 //PathRouting.InvokePath(cli,"", "Req"+ id);
             }, path);
 
@@ -181,30 +188,6 @@ namespace lib.net
             ClientManager.OnClientDisconnect += Disconnect;
             server.BeginAcceptTcpClient(AcceptClient, null);
            
-        }
-
-        private void SendHeartbeat(object? obj)
-        {
-            if(clients.Count == 0)
-            {
-                return;
-            }
-            List<NetClient> temp;
-            lock (clients)
-            {
-                temp = new List<NetClient>(clients);
-            }
-            foreach (var client in temp)
-            {
-                if(heartBeat.ContainsKey(client.ID) && heartBeat[client.ID]<DateTime.Now.Subtract(new TimeSpan(0,0,15)))
-                {
-                    Console.WriteLine($"Client {client.ID} has disconnected");
-                    client.Close();
-                    continue;
-                }
-                PathedPacket packet = new PathedPacket(EPathedPacketType.Hbt,client.ID.SerializeString(),client.ID);
-                client.SendPacket(packet);
-            }
         }
 
         private void AcceptClient(IAsyncResult ar)

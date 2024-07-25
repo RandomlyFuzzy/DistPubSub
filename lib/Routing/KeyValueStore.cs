@@ -43,9 +43,6 @@ namespace lib.Routing
                 PathedPacket pp = new(EPathedPacketType.Set, pack.Serialize(), key);
                 Config.CoreClient.SendPacket(pp);
             }
-
-
-
         }
         public static void Rem(string[] key) => Rem(String.Join("/", key));
         public static void Rem(string key)
