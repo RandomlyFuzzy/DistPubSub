@@ -1,9 +1,5 @@
 ﻿using lib.serializer;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace lib.net.Packet
 {
@@ -18,8 +14,6 @@ namespace lib.net.Packet
         //PathToSource/PathToSource2/PathToSource3...
         public byte[] Value { get => packet.Value; }
 
-
-        //PathedPacket() { }
 
         public SyncPacket(ESyncPacketType pt, string name) : this(pt, (new byte[0]).AsSpan(), name) { }
 

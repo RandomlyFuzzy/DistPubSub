@@ -51,6 +51,7 @@ namespace Schedualer
                 yield return item;
             }
         }
+
         IEnumerable<DateTime> GetTimeAbsolute()
         {
             while (true)
@@ -65,118 +66,108 @@ namespace Schedualer
                     }
                 }
                 list.Sort();
-                if (list.Any(a=>a < DateTime.Now))
+                if (list.Any(a => a < DateTime.Now))
                 {
                     throw new Exception("Time is in the past");
                 }
                 yield return list[0];
             }
         }
+
         public IEnumerator<Task<DateTime>> AsyncGetTime()
         {
-            var Enum = ScheduelType.ToLower() switch
+            var schedule = ScheduelType.ToLower() switch
             {
                 "relative" => GetTimeRelative(),
                 "absolute" => GetTimeAbsolute(),
                 _ => throw new NotImplementedException()
             };
 
-            foreach (var item in Enum)
+            foreach (var item in schedule)
             {
                 TimeSpan span = (DateTime)item - DateTime.Now;
-                //Console.WriteLine(span.TotalSeconds);
-                //await until the time is reached
-                Task<DateTime> task =new Task<DateTime>(() => {Task.Delay(span).GetAwaiter().GetResult(); return item;});
+                Task<DateTime> task = new Task<DateTime>(() => { Task.Delay(span).GetAwaiter().GetResult(); return item; });
                 task.Start();
-                yield return task;//.ContinueWith(a => item); ;
-
-
+                yield return task;
             }
-
         }
 
         public override string ToString()
         {
-            return Name+" : " + string.Join(" ", Command);
+            return Name + " : " + string.Join(" ", Command);
         }
 
         public async Task Execute()
         {
-            string cmdText = Name+" : "+string.Join(" ", Command);
+            string cmdText = Name + " : " + string.Join(" ", Command);
             ConsoleColor color = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.Blue;
-            Console.WriteLine("Executing "+cmdText);
+            Console.WriteLine("Executing " + cmdText);
             Console.ForegroundColor = color;
-            bool Redirection = Debug;
+            bool redirect = Debug;
             Process p = Process.Start(new ProcessStartInfo()
             {
                 FileName = Command[0],
                 Arguments = string.Join(" ", Command.Skip(1)),
-                UseShellExecute = !Redirection,
-                RedirectStandardOutput = Redirection,
-                RedirectStandardError = Redirection,
+                UseShellExecute = !redirect,
+                RedirectStandardOutput = redirect,
+                RedirectStandardError = redirect,
             });
 
-            if(Redirection)
+            if (redirect)
             {
                 if (p == null)
                 {
                     throw new Exception($"Process {Name} failed to start");
                 }
                 List<Task> tasks = new List<Task>();
-
                 object locker = new object();
-                tasks.Add(
-                new Task(() =>
-                    {
-                        lock (locker)
-                        {
-                            ConsoleColor color = Console.ForegroundColor;
-                            Console.ForegroundColor = ConsoleColor.Green;
-                            Console.WriteLine(cmdText);
-                            Console.ForegroundColor = color;
 
-                            while (!p.HasExited)
+                tasks.Add(new Task(() =>
+                {
+                    lock (locker)
+                    {
+                        ConsoleColor currentColor = Console.ForegroundColor;
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.WriteLine(cmdText);
+                        Console.ForegroundColor = currentColor;
+
+                        while (!p.HasExited)
+                        {
+                            if (p.StandardOutput.Peek() != -1)
                             {
-                                if (p.StandardOutput.Peek() != -1)
-                                {
-                                    Thread.Sleep(100);
-                                }
-                                Console.ForegroundColor = ConsoleColor.Yellow;
-                                Console.WriteLine("sout\t: " + p.StandardOutput.ReadLine());
-                                Console.ForegroundColor = color;
+                                Thread.Sleep(100);
                             }
-                            Console.ForegroundColor = ConsoleColor.Green;
-                            Console.WriteLine(cmdText + " : EXITED");
-                            Console.ForegroundColor = color;
-                            Console.ForegroundColor = color;
+                            Console.ForegroundColor = ConsoleColor.Yellow;
+                            Console.WriteLine("sout\t: " + p.StandardOutput.ReadLine());
+                            Console.ForegroundColor = currentColor;
                         }
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.WriteLine(cmdText + " : EXITED");
+                        Console.ForegroundColor = currentColor;
                     }
-                ));
+                }));
                 tasks.Last().Start();
 
-                tasks.Add(
-                new Task(() =>
+                tasks.Add(new Task(() =>
+                {
+                    lock (locker)
                     {
-                        lock (locker)
+                        ConsoleColor currentColor = Console.ForegroundColor;
+                        while (!p.HasExited)
                         {
-                            ConsoleColor color = Console.ForegroundColor;
-                            while (!p.HasExited)
+                            if (p.StandardError.Peek() == -1)
                             {
-                                if (p.StandardError.Peek() == -1)
-                                {
-                                    Thread.Sleep(100);
-                                }
-                                Console.ForegroundColor = ConsoleColor.Red;
-                                Console.WriteLine("err\t: " + p.StandardError.ReadLine());
-                                Console.ForegroundColor = color;
+                                Thread.Sleep(100);
                             }
-                            Console.ForegroundColor = color;
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("err\t: " + p.StandardError.ReadLine());
+                            Console.ForegroundColor = currentColor;
                         }
+                        Console.ForegroundColor = currentColor;
                     }
-                ));
+                }));
                 tasks.Last().Start();
-                //await Task.WhenAll(tasks);
             }
         }
     }

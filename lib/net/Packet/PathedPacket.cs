@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace lib.net.Packet
 {
@@ -20,7 +17,7 @@ namespace lib.net.Packet
         //PathedPacket() { }
 
         public PathedPacket(EPathedPacketType pt, SPacket packet, params string[] name) : this( pt, packet.Serialize(), name) { }
-        public PathedPacket(EPathedPacketType pt, byte[] data,params string[] name) : this(pt, data.AsSpan(), name) { }
+        public PathedPacket(EPathedPacketType pt, byte[] data, params string[] name) : this(pt, data.AsSpan(), name) { }
         public PathedPacket(EPathedPacketType pt, Span<Byte> data, params string[] name)
         {
             

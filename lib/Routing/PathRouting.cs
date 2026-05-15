@@ -1,12 +1,5 @@
 ﻿using lib.net;
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Diagnostics.Contracts;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace lib.Routing
 {
@@ -21,38 +14,13 @@ namespace lib.Routing
         }
         public static int InvokePath(NetClient cli, object Data, params string[] path)
         {
-            //bool parallel = false;
-            //string pat = String.Join("/", path);
-            //if (useParallel.ContainsKey(pat))
-            //{
-            //    parallel = useParallel[pat];
-            //}
-            //else
-            //{
-            //    useParallel.Add(pat, parallel);
-            //}
-
             Action<NetClient, object>[] act = Tree.getPath(path);
             if (act != null)
             {
-                //if (act.Length<5)
-                //{
-                    ////get cpu usage and decide to use parallel or not the next time
-                    //double cpu = GetCpuUsage();
-                    foreach (var item in act)
-                    {
-                        item?.Invoke(cli, Data);
-                    }
-                    //double cpu2 = GetCpuUsage();
-                    //if ((cpu2/cpu > 2||cpu>80) &&cpu2>0.1&&cpu>0.1)
-                    //{
-                    //    useParallel[pat] = true;
-                    //}
-                //}
-                //else
-                //{
-                //    Parallel.ForEach(act, (a) => a.Invoke(cli,Data));
-                //}
+                foreach (var item in act)
+                {
+                    item?.Invoke(cli, Data);
+                }
                 return act.Length;
             }
             return 0;

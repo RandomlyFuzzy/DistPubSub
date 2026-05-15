@@ -1,11 +1,7 @@
 ﻿using lib.net;
 using lib.net.Packet;
-using lib.Utils;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace lib.Routing
@@ -15,7 +11,7 @@ namespace lib.Routing
         static Dictionary<string, Type> TypeStore = new();
         static Dictionary<string, object> ObjStore = new();
 
-        public static void Set<T>(string[] key, T value) => Set(String.Join("/",key), new TypedPacket<T>(value));
+        public static void Set<T>(string[] key, T value) => Set(string.Join("/", key), new TypedPacket<T>(value));
         public static void Set<T>(string key, T value) => Set(key, new TypedPacket<T>(value));
 
 
@@ -86,7 +82,7 @@ namespace lib.Routing
             int id = PathRouting.AddPath((NetClient cli, object pp) =>
             {
                 PathedPacket pack = (PathedPacket)pp;
-                //Console.WriteLine("\nrecieved Packet \n");
+                //Console.WriteLine("\nreceived Packet \n");
                 TypedPacket<T> packet = new (pack.Value);
                 tcs.SetResult((T)packet.GetObject(typeof(T)));
             }, key);

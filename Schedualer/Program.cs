@@ -1,9 +1,4 @@
-﻿using Microsoft.VisualBasic;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Security.Cryptography.X509Certificates;
-
-namespace Schedualer
+﻿namespace Schedualer
 {
     public class Program
     {
@@ -34,43 +29,31 @@ namespace Schedualer
             string json = System.IO.File.ReadAllText(path);
             Entry[] entries = Utilities.JsonDeserialize(json);
 
-
             MainThread(entries).GetAwaiter().GetResult();
         }
+
         static async Task MainThread(Entry[] entries)
         {
-            List<Thread> threads = new List<Thread>();
             foreach (var entry in entries)
             {
-                //threads.Add(new Thread(async () =>
-                //{
                 try
                 {
                     Console.WriteLine(entry.ToString());
                     var time = entry.AsyncGetTime();
-                    while(time.MoveNext())
+                    while (time.MoveNext())
                     {
                         DateTime dt = await time.Current;
                         Console.WriteLine(dt);
                         await entry.Execute();
                     }
-                }catch(Exception e)
+                }
+                catch (Exception e)
                 {
                     Console.WriteLine(e.Message);
                 }
                 Console.WriteLine("Thread Exited");
-                //}));
-                //threads.Last().Start();
-            }
-            Thread.Sleep(1000);
-            while(!threads.All(a=>!a.IsAlive))
-            {
-                Thread.Sleep(1000);
             }
             Console.Read();
         }
-
-
-        
     }
 }

@@ -1,17 +1,9 @@
 ﻿using lib.net.Packet;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.NetworkInformation;
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
 using lib.Routing;
 using lib.serializer;
 using lib.Utils;
-using System.Security.Cryptography.X509Certificates;
-using System.Security.Claims;
+using System.Net;
+using System.Net.Sockets;
 
 namespace lib.net
 {
@@ -44,20 +36,19 @@ namespace lib.net
 
             IP = address.ToString();
             
-            server = new TcpListener(address,port);
+            server = new TcpListener(address, port);
             this.port = port;
             Config.IsServer = true;
             Config.CoreServer = this;
             BindPathedPacketType();
-            Console.WriteLine(address.ToString()) ;
-            if(MasterServer != null)
+            Console.WriteLine(address.ToString());
+            if (MasterServer != null)
             {
                 NetClient client = new NetClient(MasterServer);
                 client.isServerConnection = true;
                 PathedPacket packet = new PathedPacket(EPathedPacketType.Bro, new byte[0], "");
                 client.SendPacket(packet);
             }
-            //timer = new Timer(SendHeartbeat, null, 0, 1000);
         }
 
         ~NetServer()
@@ -77,15 +68,13 @@ namespace lib.net
                 PathedPacket pack = (PathedPacket)pp;
                 string[] id = pack.RoutingPath();
                 string path = String.Join("/", id);
-                cli.ClientLog(path+" subscribed to");
+                cli.ClientLog(path + " subscribed to");
                 PathRouting.AddPath((NetClient cli2, object pp) =>
                 {
                     PathedPacket pack = (PathedPacket)pp;
                     string[] id = pack.RoutingPath();
                     PathedPacket packet = new PathedPacket(EPathedPacketType.Pub, pack.Value, id);
-                    //cli2.ClientLog("Publishing message to \"" + path + "\" subscribers");
                     cli.SendPacket(pack);
-                    //PathRouting.InvokePath(cli,"", "Req"+ id);
                 }, id);
             },path);
 
@@ -104,7 +93,6 @@ namespace lib.net
                 PathedPacket pack = (PathedPacket)pp;
                 string[] id = pack.RoutingPath();
                 KeyValueStore.Req(cli, id);
-                //PathRouting.InvokePath(cli,"", "Req"+ id);
             }, path);
             path = EPathedPacketType.Res.ToString();
             PathRouting.AddPath((NetClient cli, object pp) =>
@@ -112,8 +100,7 @@ namespace lib.net
                 PathedPacket pack = (PathedPacket)pp;
                 var id = pack.RoutingPath();
                 TypedPacket<object> packet = new(pack.Value);
-                KeyValueStore.Set(id,packet);
-                //PathRouting.InvokePath(cli,"", "Req"+ id);
+                KeyValueStore.Set(id, packet);
             }, path);
             path = EPathedPacketType.Set.ToString();
             PathRouting.AddPath((NetClient cli, object pp) =>
@@ -122,8 +109,7 @@ namespace lib.net
                 var id = pack.RoutingPath();
                 TypedPacket<object> packet = new(pack.Value);
                 Type t = packet.Key.GetTypeFromName();
-                KeyValueStore.Set(id,packet.GetObject(t));
-                //PathRouting.InvokePath(cli,"", "Req"+ id);
+                KeyValueStore.Set(id, packet.GetObject(t));
             }, path);
             path = EPathedPacketType.Rem.ToString();
             PathRouting.AddPath((NetClient cli, object pp) =>
@@ -131,7 +117,6 @@ namespace lib.net
                 PathedPacket pack = (PathedPacket)pp;
                 var id = pack.RoutingPath();
                 KeyValueStore.Rem(id);
-                //PathRouting.InvokePath(cli,"", "Req"+ id);
             }, path);
 
             path = EPathedPacketType.Err.ToString();
@@ -154,7 +139,6 @@ namespace lib.net
             PathRouting.AddPath((NetClient cli, object pp) =>
             {
                 cli.ClientLog(" Connected");
-                //PathRouting.InvokePath(cli,"", "Req"+ id);
             }, path);
             path = EPathedPacketType.Dis.ToString();
             PathRouting.AddPath((NetClient cli, object pp) =>
@@ -162,7 +146,6 @@ namespace lib.net
                 cli.ClientLog(" Disconnected");
                 cli.Close();
                 ClientManager.RemoveClient(cli);
-                //PathRouting.InvokePath(cli,"", "Req"+ id);
             }, path);
 
             path = EPathedPacketType.Hnd.ToString();
